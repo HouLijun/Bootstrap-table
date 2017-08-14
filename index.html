@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>bootstrap-table</title>
+    <link rel="stylesheet" href="css/public/bootstrap.min.css">
+    <link rel="stylesheet" href="css/public/bootstrap-table.min.css">
+</head>
+<body>
+	<table  class="table table-hover" id="table"></table>
+</body>
+
+<script src="js/public/jquery.min.js"></script>
+<script src="js/public/bootstrap-table.min.js"></script>
+<script src="js/public/bootstrap-table-zh-CN.min.js"></script>
+<script>
+$(function(){
+	var url="/getData";
+    renderTable(url);
+    //表格
+    function renderTable(url) {
+        $("#table").empty();
+        $('#table').bootstrapTable({
+            method: 'get',
+            contentType: "application/x-www-form-urlencoded",//必须要有！！！！
+            url: url,//要请求数据的文件路径
+            striped: true, //是否显示行间隔色
+            dataField: "data",//bootstrap table 可以前端分页也可以后端分页，这里
+            //我们使用的是后端分页，后端分页时需返回含有total：总记录数,这个键值好像是固定的
+            //rows： 记录集合 键值可以修改  dataField 自己定义成自己想要的就好
+            pageNumber: 1, //初始化加载第一页，默认第一页
+            pagination: true,//是否分页
+            queryParamsType: 'limit',//查询参数组织方式
+            queryParams: queryParams,//请求服务器时所传的参数
+            responseHandler:responseHandler,//在ajax获取到数据，渲染表格之前，修改数据源
+            sidePagination: 'server',//指定服务器端分页
+            pageSize: 10,//单页记录数
+            pageList: [5, 10, 20, 30],//分页步进值
+            clickToSelect: true,//是否启用点击选中行
+            columns: [
+                {
+                    title: 'ID',
+                    field: 'id',	//必须和服务端返回数据相同
+                    visible: false
+                },
+                {
+                    title: '名称',
+                    field: 'name',
+                    sortable: true,
+                    formatter: function (value, row, index) {
+	                    return "<a href=\"#\" name=\"UserName\" data-type=\"text\" data-pk=\""+row.Id+"\" data-title=\"用户名\">" + value + "</a>";
+	                }
+                }，
+                {
+                    title: '联系电话',
+                    field: 'tel',
+                    sortable: true
+                },
+            ],
+            locale: 'zh-CN',//中文支持,
+        })
+
+        //请求服务数据时所传参数
+        function queryParams(params) {
+            return {
+                //每页多少条数据
+                pageSize: params.limit,
+                //请求第几页 offset从0开始
+                pageNum: params.offset+1,
+            }
+        }
+        //请求成功方法
+        function responseHandler(result){
+        	//返回json数据
+            if(result.code != 200){
+                alert("数据出错");
+                return;
+            }
+            //如果没有错误则返回数据，渲染表格
+            return {
+                //total : result.dataLength, //总页数,前面的key必须为"total"
+                total : 10, //总页数,前面的key必须为"total"
+                data : result.data //行数据，前面的key要与之前设置的dataField的值一致.
+            };
+        };
+        //查询按钮事件
+        // $('#search_btn').click(function(){
+        //     $('#mytab').bootstrapTable('refresh', {url: '../index.php/admin/index/userManagement'});
+        // })
+
+    }
+})
+</script>
+</html>
