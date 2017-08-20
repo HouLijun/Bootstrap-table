@@ -19,75 +19,138 @@ $(function(){
     renderTable(url);
     //表格
     function renderTable(url) {
-        $("#table").empty();
         $('#table').bootstrapTable({
             method: 'get',
             contentType: "application/x-www-form-urlencoded",//必须要有！！！！
             url: url,//要请求数据的文件路径
+            cache: false,//是否使用缓存
             striped: true, //是否显示行间隔色
+            pagination: true,//是否分页
+            pageNumber: 1, //初始化加载第一页，默认第一页
+            pageSize: 10,//单页记录数
+            pageList: [5, 10, 20],//分页步进值
+            clickToSelect: true,//是否启用点击选中行
+            uniqueId: "id",      //每一行的唯一标识，一般为主键列
+            sidePagination: 'server',//指定服务器端分页
             dataField: "data",//bootstrap table 可以前端分页也可以后端分页，这里
             //我们使用的是后端分页，后端分页时需返回含有total：总记录数,这个键值好像是固定的
             //rows： 记录集合 键值可以修改  dataField 自己定义成自己想要的就好
-            pageNumber: 1, //初始化加载第一页，默认第一页
-            pagination: true,//是否分页
             queryParamsType: 'limit',//查询参数组织方式
             queryParams: queryParams,//请求服务器时所传的参数
             responseHandler:responseHandler,//在ajax获取到数据，渲染表格之前，修改数据源
-            sidePagination: 'server',//指定服务器端分页
-            pageSize: 10,//单页记录数
-            pageList: [5, 10, 20, 30],//分页步进值
-            clickToSelect: true,//是否启用点击选中行
             columns: [
                 {
                     title: 'ID',
-                    field: 'id',	//必须和服务端返回数据相同
+                    field: 'id',
                     visible: false
                 },
                 {
-                    title: '名称',
-                    field: 'name',
-                    sortable: true,
-                    formatter: function (value, row, index) {
-	                    return "<a href=\"#\" name=\"UserName\" data-type=\"text\" data-pk=\""+row.Id+"\" data-title=\"用户名\">" + value + "</a>";
-	                }
-                }，
+                    title: '镇名称',
+                    field: 'town',
+                    align: 'center'
+                },
+                {
+                    title: '行政村名称',
+                    field: 'village',
+                    align: 'center'
+                },
+                {
+                    title: '户主姓名',
+                    field: 'masterName',
+                    //sortable: true,
+                    align: 'center'
+                },
+                {
+                    title: '身份证号',
+                    field: 'privateId',
+                    align: 'center'
+                },
+                {
+                    title: '脱贫属性',
+                    field: 'tuopinProperty',
+                    align: 'center'
+                },
+                {
+                    title: '贫困户属性',
+                    field: 'pkhProperty',
+                    align: 'center'
+                },
                 {
                     title: '联系电话',
                     field: 'tel',
-                    sortable: true
+                    align: 'center'
                 },
+                {
+                    title: '操作',
+                    field: 'operation',
+                    align: 'center',
+                    formatter:function(value,row,index){
+                        //通过formatter可以自定义列显示的内容
+                        //value：当前field的值，即id
+                        //row：当前行的数据
+                        return "<a href='javascript:void(0)' class='check_detail J_checkDetail'><i class='iconfont icon-search'></i></a>";
+                    }
+                }
             ],
             locale: 'zh-CN',//中文支持,
+            onClickRow:function (row,ele,field) {
+            	//row:点击当前行的所有数据
+            	//ele:点击的当前行元素tr
+            	//filed:点击当前列的filed
+                var id=row.id;
+                if(field=="operation"){
+                    parent.layer.open({
+                        type: 2,
+                        title:"贫困户家庭状况详情",
+                        content: 'poorDetail.html?id='+id,
+                        //这里content是一个URL，如果你不想让iframe出现滚动条，你还可以content: ['http://sentsin.com', 'no']
+                        area:["950px","500px"],
+                        btn:"确定"
+                    });
+                }
+            }
         })
 
         //请求服务数据时所传参数
         function queryParams(params) {
+            var pageSize=params.limit;
+            var pageNum=params.offset/pageSize+1;//offser从0开始
             return {
                 //每页多少条数据
-                pageSize: params.limit,
-                //请求第几页 offset从0开始
-                pageNum: params.offset+1,
+                pageSize: pageSize,
+                //请求第几页
+                pageNum: pageNum,
             }
         }
         //请求成功方法
         function responseHandler(result){
-        	//返回json数据
             if(result.code != 200){
                 alert("数据出错");
                 return;
             }
             //如果没有错误则返回数据，渲染表格
             return {
-                //total : result.dataLength, //总页数,前面的key必须为"total"
-                total : 10, //总页数,前面的key必须为"total"
+                total : result.count,//总数据条数,前面的key必须为"total"
                 data : result.data //行数据，前面的key要与之前设置的dataField的值一致.
             };
         };
-        //查询按钮事件
-        // $('#search_btn').click(function(){
-        //     $('#mytab').bootstrapTable('refresh', {url: '../index.php/admin/index/userManagement'});
-        // })
 
+    }
+
+    //查询按钮事件
+    $('#btn_search').click(function(e){
+        e.preventDefault();
+        var householdName=$("#householdName").val();
+        if(householdName){
+            url='/pkh/findList?masterName='+householdName;
+            refreshTable(url);
+        }else{
+            alert("请先输入户主姓名！");
+        }
+    })
+    //重新渲染表格
+    function refreshTable(url) {
+        $('#table').bootstrapTable('refresh', {url:url});
     }
 })
 </script>
